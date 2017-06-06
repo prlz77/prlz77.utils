@@ -49,9 +49,12 @@ for path in args.path:
             data = json.load(infile)
     except Exception as e:
         print(e)
-        print(args.path)
+        print(path)
         continue
 
+    if len(data) == 0:
+        print('skipping empty ', path)
+        continue
     best_line = data[0]
     for line in data[1:]:
         target = float(line[args.target_field])
