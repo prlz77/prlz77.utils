@@ -23,8 +23,8 @@ class JsonLogger():
         if rand_folder:
             path = os.path.join(path, str(datetime.datetime.now()))
             os.makedirs(path)
-        path = os.path.join(path, 'log.json')
-        self.output = open(path, 'w+')
+        self.path = os.path.join(path, 'log.json')
+        self.output = open(self.path, 'w+')
         self.output.write('[]')
         self.first_time = True
 
