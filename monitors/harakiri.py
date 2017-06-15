@@ -26,6 +26,7 @@ class Harakiri(object):
         """
         assert (plateau_length >= 1)
         self.test = lambda: 1 * (self.best_value > self.buffer[-1]) + 2 * (len(self.buffer) >= plateau_length)
+        return self
 
     def set_min_plateau(self, plateau_length):
         """ Sets harakiri to look for max values
@@ -35,6 +36,7 @@ class Harakiri(object):
         """
         assert (plateau_length >= 1)
         self.test = lambda: 1 * (self.best_value < self.buffer[-1]) + 2 * (len(self.buffer) >= plateau_length)
+        return self
 
     def set_message(self, message):
         """ Set the process last words
