@@ -55,14 +55,24 @@ for path in args.path:
     if len(data) == 0:
         print('skipping empty ', path)
         continue
-    best_line = data[0]
-    for line in data[1:]:
+
+    index = 0
+    while index < len(data) and args.target_field not in data[index]:
+        index += 1
+
+    if index == len(data):
+        print('%s not found in %s' %(args.target_field, path))
+        continue
+    else:
+        best_line = data[index]
+
+    for line in data[index:]:
         target = float(line[args.target_field])
         if better(target, float(best_line[args.target_field])):
             best_line = line
 
     inner_buffer = []
-    for field in sorted(line.keys()):
+    for field in sorted(best_line.keys()):
         if args.fields is None or field in args.fields:
             inner_buffer.append(best_line[field])
     outer_buffer.append(';'.join([str(x) for x in inner_buffer]))
