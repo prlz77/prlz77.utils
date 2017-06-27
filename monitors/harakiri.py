@@ -16,7 +16,7 @@ class Harakiri(object):
         self.best_value = initial_value
         self.buffer = []
         self.test = lambda: 1  # The test consists in two bits: plateau_length_exceeded current_value_is_best (2^1 2^0)
-        self.message = "(Harakiri) Plateau reached."
+        self.message = "(Harakiri)"
         self.waypoints = []
 
     def add_waypoint(self, condition=lambda epoch, value: True):
@@ -65,12 +65,12 @@ class Harakiri(object):
         """
         for waypoint in self.waypoints:
             if not waypoint(epoch, value):
-                print(self.message)
+                print(self.message, "Waypoint fail.")
                 sys.exit(0)
         self.buffer.append(value)
         test_v = self.test()
         if test_v == 3:
-            print(self.message)
+            print(self.message, "Plateau reached.")
             sys.exit(0)
         elif test_v & 1 == 0:
             self.buffer = []
