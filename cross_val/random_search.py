@@ -75,7 +75,7 @@ class RandomSearch(object):
             name (str): hyperparam name.
             value: value to return.
         """
-        self.iterable.append((name, value))
+        self.iterable.append((name, [value]))
         self.params[name] = lambda : value
 
     def add_custom(self, name, f):
