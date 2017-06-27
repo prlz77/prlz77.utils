@@ -17,6 +17,16 @@ class Harakiri(object):
         self.buffer = []
         self.test = lambda: 1  # The test consists in two bits: plateau_length_exceeded current_value_is_best (2^1 2^0)
         self.message = "(Harakiri) Plateau reached."
+        self.waypoints = []
+
+    def add_waypoint(self, condition=lambda epoch, value: True):
+        """ Add a condition that the training curve must accomplish. E.g. accuracy must always be higher than
+            0 after the first epoch.
+
+        Args:
+            condition (function): tester function. Returns True to continue training.
+        """
+        self.waypoints.append(condition)
 
     def set_max_plateau(self, plateau_length):
         """ Sets harakiri to look for max values.
@@ -46,12 +56,17 @@ class Harakiri(object):
         """
         self.message = message
 
-    def update(self, value):
+    def update(self, epoch, value):
         """ Tests the plateau condition given a new value
 
         Args:
+            epoch (int or float): current epoch
             value (int or float): value to test
         """
+        for waypoint in self.waypoints:
+            if not waypoint(epoch, value):
+                print(self.message)
+                sys.exit(0)
         self.buffer.append(value)
         test_v = self.test()
         if test_v == 3:
