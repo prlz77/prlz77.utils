@@ -119,7 +119,7 @@ class RandomSearch(object):
         ret = []
         for key in arg:
             ret.append(key)
-            if not isinstance(bool, arg[key]):
+            if not isinstance(arg[key], bool):
                 ret.append(arg[key])
 
         return ret
