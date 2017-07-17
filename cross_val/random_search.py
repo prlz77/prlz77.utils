@@ -118,9 +118,11 @@ class RandomSearch(object):
 
         ret = []
         for key in arg:
-            ret.append(key)
             if not isinstance(arg[key], bool):
+                ret.append(key)
                 ret.append(arg[key])
+            elif arg[key]:
+                ret.append(key)
 
         return ret
 
