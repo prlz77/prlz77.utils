@@ -104,18 +104,13 @@ class RandomSearch(object):
 
         """
         connect = []
-        flags = []
         arg = {}
         for key in sorted(self.params.keys()):
             if isinstance(self.params[key], tuple):
                 connect.append(key)
             else:
                 value = self.params[key]()
-                if isinstance(value, bool):
-                    if value:
-                        flags.append(key)
-                else:
-                    arg[key] = value
+                arg[key] = value
 
         for key in connect:
             b, f = self.params[key]
@@ -124,10 +119,8 @@ class RandomSearch(object):
         ret = []
         for key in arg:
             ret.append(key)
-            ret.append(arg[key])
-
-        for flag in flags:
-            ret.append(flag)
+            if not isinstance(bool, arg[key]):
+                ret.append(arg[key])
 
         return ret
 
