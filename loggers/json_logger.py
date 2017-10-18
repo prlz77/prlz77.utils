@@ -21,7 +21,7 @@ class JsonLogger():
             unique_folder: create a unique folder with the current datetime
         """
         if rand_folder:
-            path = os.path.join(path, str(datetime.datetime.now()))
+            path = os.path.join(path, str(datetime.datetime.now()).replace(' ', '_'))
             os.makedirs(path)
         self.path = os.path.join(path, 'log.json')
         self.output = open(self.path, 'w+')

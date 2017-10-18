@@ -17,18 +17,26 @@ import glob
 import seaborn as sns
 
 parser = argparse.ArgumentParser()
-parser.add_argument('path', type=str, nargs='+', help="json log path")
-parser.add_argument('-x', type=str, help="x axis field name")
-parser.add_argument('-y', type=str, help="y axis field name")
-parser.add_argument('--list_fields', action='store_true', help="list log fields")
-parser.add_argument('--title', '-t', type=str, default='', help="plot title")
-parser.add_argument('--ignore_errors', action='store_true', help="will continue in case of erroneous log")
+parser.add_argument('path', type=str, nargs='+', 
+        help="json log path")
+parser.add_argument('-x', type=str, 
+        help="x axis field name")
+parser.add_argument('-y', type=str, 
+        help="y axis field name")
+parser.add_argument('--list_fields', action='store_true', 
+        help="list log fields")
+parser.add_argument('--title', '-t', type=str, default='', 
+        help="plot title")
+parser.add_argument('--ignore_errors', action='store_true', 
+        help="will continue in case of erroneous log")
 parser.add_argument('--legend_fields', '-l', type=str, nargs='+', default=[],
         help='list of fields to show in the legend')
 parser.add_argument('--live', action='store_true', 
         help='update plot live')
 parser.add_argument('--filter', action='append', type=str, default=[], 
         help='use in the following way: field [>|<][=] value. For instance: accuracy > 0.5')
+parser.add_argument('--meanstd', action='store_true',  
+        help='plot mean and std')
 
 args = parser.parse_args()
 
@@ -57,8 +65,7 @@ def read(verbose=False):
     return padded
 
 def parse(padded_list):
-    data = []
-    max_y = []
+    ret = {'data':[], 'max_y':[]}
     for padded in padded_list:
         try:
             if len(args.filter) > 0:
@@ -80,25 +87,26 @@ def parse(padded_list):
                     continue
 
             d = {'x':padded[args.x], 'y':np.array(padded[args.y]), 'legend': None}
-            max_y.append(np.max(padded[args.y]))
             if len(args.legend_fields) > 0:
                 d['legend'] = ','.join([str(padded[x][0]) for x in args.legend_fields])
-            data.append(d)
+            ret['data'].append(d)
+            ret['max_y'].append(np.nanmax(padded[args.y]))
+
         except Exception as e:
             if args.ignore_errors:
                 print(e)
             else:
                 raise e
 
-    return data, max_y
+    return ret
 
-def plot(data, max_y):
+def plot_data(data):
     pylab.hold(True)
-    indices = np.argsort(max_y)[::-1]
+    indices = np.argsort(data['max_y'])[::-1]
     legend = []
     for ind in indices:
-        pylab.plot(data[ind]['x'], data[ind]['y'])
-        legend.append(data[ind]['legend'])
+        pylab.plot(data['data'][ind]['x'], data['data'][ind]['y'])
+        legend.append(data['data'][ind]['legend'])
         
     pylab.title(args.title)
     pylab.xlabel(args.x)
@@ -107,21 +115,36 @@ def plot(data, max_y):
     if len(args.legend_fields) > 0:
         pylab.legend(legend).draggable()
 
+def plot_error(data):
+    pylab.hold(True)
+    all_y = np.array([d['y'] for d in data['data']])
+
+    pylab.errorbar(data['data'][0]['x'], np.nanmean(all_y, axis=0), np.nanstd(all_y, axis=0))
+    pylab.plot(data['data'][0]['x'], np.nanmean(all_y, axis=0))
+        
+    pylab.title(args.title)
+    pylab.xlabel(args.x)
+    pylab.ylabel(args.y)
+
 def main():
     padded = read(True)
+    if args.meanstd:
+        plot = plot_error
+    else:
+        plot = plot_data
     if args.list_fields:
         for p in padded:
             print(padded.keys())
     else:
-        data, max_y = parse(padded)
-        plot(data, max_y)
+        data = parse(padded)
+        plot(data)
         while args.live:
             pylab.draw()
             pylab.pause(1)
             padded = read(False)
-            data, max_y = parse(padded)
+            data = parse(padded)
             pylab.clf()
-            plot(data, max_y)
+            plot(data)
         pylab.show()
 
 
