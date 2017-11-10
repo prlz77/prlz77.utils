@@ -77,7 +77,12 @@ for path in args.path:
             inner_buffer.append(best_line[field])
     outer_buffer.append(';'.join([str(x) for x in inner_buffer]))
 
-output.write('%s\n'%(';'.join(sorted(best_line.keys()))))
+if args.fields is None:
+    keys = best_line.keys()
+else:
+    keys = args.fields
+
+output.write('%s\n'%(';'.join(sorted(keys))))
 output.write('\n'.join(outer_buffer))
 
 output.close()
