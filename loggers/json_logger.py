@@ -13,7 +13,7 @@ class JsonLogger():
     """
     The main class.
     """
-    def __init__(self, path, rand_folder=False):
+    def __init__(self, path, rand_folder=False, duration=False):
         """ Constructor.
 
         Args:
@@ -27,6 +27,7 @@ class JsonLogger():
         self.output = open(self.path, 'w+')
         self.output.write('[]')
         self.first_time = True
+        self.duration = datetime.datetime.now() if duration else False
 
     def update(self, state):
         """ Update log status (outputs to file).
@@ -34,6 +35,9 @@ class JsonLogger():
         Args:
             state (dict): the current model state.
         """
+        if not (self.duration is False):
+            state['duration'] = str(datetime.datetime.now() - self.duration)
+
         self.output.seek(self.output.tell()-1, 0)
         if not self.first_time:
             self.output.write(',')
