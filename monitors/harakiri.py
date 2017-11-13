@@ -18,6 +18,24 @@ class Harakiri(object):
         self.test = lambda: 1  # The test consists in two bits: plateau_length_exceeded current_value_is_best (2^1 2^0)
         self.message = "(Harakiri)"
         self.waypoints = []
+        self.waypoint_callbacks = []
+        self.plateau_callbacks = []
+
+    def add_waypoint_callback(self, callback):
+        """ Set a function to be called when a waypoint is violated
+
+        Args:
+            callback: a function reference
+        """
+        self.waypoint_callbacks.append(callback)
+
+    def add_plateau_callback(self, callback):
+        """ Set a function to be called when a plateau is violated
+
+        Args:
+            callback: a function reference
+        """
+        self.plateau_callbacks.append(callback)
 
     def add_waypoint(self, condition=lambda epoch, value: True):
         """ Add a condition that the training curve must accomplish. E.g. accuracy must always be higher than
