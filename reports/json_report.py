@@ -7,6 +7,7 @@ Generates a plot from a json file with a list of model states.
 
 import json
 import argparse
+import numpy as np
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('path', nargs='+', type=str,
@@ -21,6 +22,8 @@ parser.add_argument('--delimiter', type=str, default=';',
                     help='csv field delimiter')
 parser.add_argument('--fields', nargs='+', type=str, default=None,
                     help='other fields to appear in the report. Defaults to all.')
+parser.add_argument('--average', type=int, default=0, metavar="AVG",
+                    help='merge AVG similar rows')
 args = parser.parse_args()
 
 def better(a, b):
@@ -42,7 +45,7 @@ def better(a, b):
 
 output = open(args.output, 'w')
 
-outer_buffer = []
+outer_buffer = {}
 for path in args.path:
     try:
         with open(path, 'r') as infile:
@@ -72,18 +75,34 @@ for path in args.path:
             best_line = line
 
     inner_buffer = []
-    for field in sorted(best_line.keys()):
+    keys = filter(lambda x: x != args.target_field, best_line.keys())
+    for field in sorted(keys):
         if args.fields is None or field in args.fields:
             inner_buffer.append(best_line[field])
-    outer_buffer.append(';'.join([str(x) for x in inner_buffer]))
+    inner_buffer_str = ";".join([str(x) for x in inner_buffer])
+    if inner_buffer_str not in outer_buffer:
+        outer_buffer[inner_buffer_str] = [best_line[args.target_field]]
+    else:
+        outer_buffer[inner_buffer_str].append(best_line[args.target_field])
+
+avg_outer_buffer = []
+for line in outer_buffer:
+    targets = outer_buffer[line]
+    if args.average == 0:
+        for t in targets:
+            avg_outer_buffer.append(";".join([line, str(t)]))
+    elif len(targets) >= args.average:
+        avg_outer_buffer.append(";".join([line, str(np.mean(targets)), str(np.std(targets))]))
+if args.average != 0:
+    args.target_field = ";".join(["%s_mean" %args.target_field, "%s_std" %args.target_field])
 
 if args.fields is None:
-    keys = best_line.keys()
+    keys = filter(lambda key: key != args.target_field, best_line.keys())
 else:
     keys = args.fields
 
-output.write('%s\n'%(';'.join(sorted(keys))))
-output.write('\n'.join(outer_buffer))
+output.write('%s\n'%(';'.join(sorted(keys) + [args.target_field])))
+output.write('\n'.join(avg_outer_buffer))
 
 output.close()
 
