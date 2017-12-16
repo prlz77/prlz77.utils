@@ -21,8 +21,8 @@ parser.add_argument('path', type=str, nargs='+',
         help="json log path")
 parser.add_argument('-x', type=str, 
         help="x axis field name")
-parser.add_argument('-y', type=str, 
-        help="y axis field name")
+parser.add_argument('-y', type=str, action='append',
+        help="y axis field name (x)")
 parser.add_argument('--list_fields', action='store_true', 
         help="list log fields")
 parser.add_argument('--title', '-t', type=str, default='', 
@@ -85,12 +85,12 @@ def parse(padded_list):
                         break
                 if skip:
                     continue
-
-            d = {'x':padded[args.x], 'y':np.array(padded[args.y]), 'legend': None}
+            d = {'x': padded[args.x], 'legend': ""}
+            d.update({y: np.array(padded[y]) for y in args.y})
             if len(args.legend_fields) > 0:
                 d['legend'] = ','.join([str(padded[x][0]) for x in args.legend_fields])
             ret['data'].append(d)
-            ret['max_y'].append(np.nanmax(padded[args.y]))
+            ret['max_y'].append(np.nanmax(padded[args.y[0]]))
 
         except Exception as e:
             if args.ignore_errors:
@@ -105,15 +105,16 @@ def plot_data(data):
     indices = np.argsort(data['max_y'])[::-1]
     legend = []
     for ind in indices:
-        pylab.plot(data['data'][ind]['x'], data['data'][ind]['y'])
-        legend.append(data['data'][ind]['legend'])
+        print(args.y)
+        for y in args.y:
+            pylab.plot(data['data'][ind]['x'], data['data'][ind][y])
+            legend.append("%s. %s" %(y, data['data'][ind]['legend']))
         
     pylab.title(args.title)
     pylab.xlabel(args.x)
-    pylab.ylabel(args.y)
+    pylab.ylabel(args.y[0])
     
-    if len(args.legend_fields) > 0:
-        pylab.legend(legend).draggable()
+    pylab.legend(legend).draggable()
 
 def plot_error(data):
     pylab.hold(True)
