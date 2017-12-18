@@ -4,45 +4,43 @@ import pylab
 
 
 class Plotter(object):
-    legend = []
-    scores = []
-    x = []
-    y = []
+    def __init__(self):
+        self.legend = []
+        self.scores = []
+        self.x = []
+        self.y = []
 
-    @staticmethod
-    def add_line(data, x=None, label="", score_f=np.max):
+    def add_line(self, data, x=None, label="", score_f=np.max):
         data = np.array(data)
         if x is None:
             x = np.arange(data.shape[-1])
-        Plotter.x.append(x)
-        Plotter.y.append(data)
-        Plotter.scores.append(score_f(data))
-        Plotter.legend.append(label)
+        self.x.append(x)
+        self.y.append(data)
+        self.scores.append(score_f(data))
+        self.legend.append(label)
 
-    @staticmethod
-    def plot(xlabel="", ylabel="", title=""):
+    def plot(self, xlabel="", ylabel="", title=""):
         pylab.figure()
-        indices = np.argsort(Plotter.scores)[::-1]
+        indices = np.argsort(self.scores)[::-1]
         colors = sns.color_palette("hls", len(indices))
         legend = []
         for i in indices:
-            pylab.plot(Plotter.x[i], np.array(Plotter.y[i]), color=colors[i])
-            legend.append(Plotter.legend[i])
+            pylab.plot(self.x[i], np.array(self.y[i]), color=colors[i])
+            legend.append(self.legend[i])
         pylab.legend(legend).draggable()
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
         pylab.title(title)
         pylab.show()
 
-    @staticmethod
-    def tsplot(xlabel="", ylabel="", title=""):
+    def tsplot(self, xlabel="", ylabel="", title=""):
         pylab.figure()
-        indices = np.argsort(Plotter.scores)[::-1]
+        indices = np.argsort(self.scores)[::-1]
         colors = sns.color_palette("hls", len(indices))
         legend = []
         for i in indices:
-            sns.tsplot(np.array(Plotter.y[i]), color=colors[i])
-            legend.append(Plotter.legend[i])
+            sns.tsplot(np.array(self.y[i]), color=colors[i])
+            legend.append(self.legend[i])
         pylab.legend(legend).draggable()
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
