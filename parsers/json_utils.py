@@ -74,10 +74,12 @@ def pad_dict(document):
     return ret
 
 class JsonDoc(object):
-    def __init__(self, path):
+    def __init__(self, path, skip_header=0):
         self.path = path
         with open(path, 'r') as infile:
             self.data = json.load(infile)
+        if self.skip_header > 0:
+            self.data = self.data[skip_header:]
         self.hyperparams = collapse(self.data)
         self.data = transpose(self.data)
         self.keys = self.data.keys()

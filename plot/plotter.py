@@ -11,7 +11,7 @@ class Plotter(object):
         self.x = []
         self.y = []
 
-    def add_line(self, data, x=None, label="", score_f=np.max):
+    def add_line(self, data, x=None, label="", score_f=np.nanmax):
         data = np.array(data)
         if x is None:
             x = np.arange(data.shape[-1])
@@ -43,4 +43,3 @@ class Plotter(object):
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
         pylab.title(title)
-        pylab.show()
