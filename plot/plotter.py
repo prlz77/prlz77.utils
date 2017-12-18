@@ -21,6 +21,7 @@ class Plotter(object):
         self.legend.append(label)
 
     def plot(self, xlabel="", ylabel="", title=""):
+        pylab.cla()
         indices = np.argsort(self.scores)[::-1]
         colors = sns.color_palette("hls", len(indices))
         legend = []
@@ -33,6 +34,7 @@ class Plotter(object):
         pylab.title(title)
 
     def tsplot(self, xlabel="", ylabel="", title=""):
+        pylab.cla()
         indices = np.argsort(self.scores)[::-1]
         colors = sns.color_palette("hls", len(indices))
         legend = []
