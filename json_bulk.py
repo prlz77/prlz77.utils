@@ -114,14 +114,17 @@ class JsonBulk(object):
         ret[dst] = function(ret[dst])
         return ret
 
-    def plot_one_line(self, y_field, x_field="", legend="", score_f=np.max):
+    def plot_one_line(self, y_field, x_field="", legend="", score_f=np.max, plotter=None):
         if legend == "":
             legend = y_field
+        if plotter is None:
+            plotter = Plotter()
         data = [d[y_field] for d in self.data]
         if x_field != "":
             x = [d[x_field] for d in self.data]
         else:
             x = None
-        Plotter.add_line(data, x=x, label=legend, score_f=score_f)
-        Plotter.tsplot()
+        plotter.add_line(data, x=x, label=legend, score_f=score_f)
+        plotter.tsplot()
+        return plotter
 
