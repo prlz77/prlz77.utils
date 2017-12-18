@@ -31,10 +31,8 @@ class Plotter(object):
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
         pylab.title(title)
-        pylab.show()
 
     def tsplot(self, xlabel="", ylabel="", title=""):
-        pylab.figure()
         indices = np.argsort(self.scores)[::-1]
         colors = sns.color_palette("hls", len(indices))
         legend = []
