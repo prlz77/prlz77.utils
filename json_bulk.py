@@ -22,7 +22,7 @@ class JsonBulk(object):
         self.keys = []
         self.hyperparams = []
         if path != "":
-            self.load(path, skip_header)
+            self.load(path, skip_header=skip_header)
 
     def __add__(self, docs):
         ret = copy(self)
