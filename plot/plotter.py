@@ -5,6 +5,7 @@ import pylab
 
 class Plotter(object):
     def __init__(self):
+        pylab.figure()
         self.legend = []
         self.scores = []
         self.x = []
@@ -20,7 +21,6 @@ class Plotter(object):
         self.legend.append(label)
 
     def plot(self, xlabel="", ylabel="", title=""):
-        pylab.figure()
         indices = np.argsort(self.scores)[::-1]
         colors = sns.color_palette("hls", len(indices))
         legend = []
