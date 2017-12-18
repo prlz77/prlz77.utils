@@ -78,7 +78,7 @@ class JsonDoc(object):
         self.path = path
         with open(path, 'r') as infile:
             self.data = json.load(infile)
-        if self.skip_header > 0:
+        if skip_header > 0:
             self.data = self.data[skip_header:]
         self.hyperparams = collapse(self.data)
         self.data = transpose(self.data)
