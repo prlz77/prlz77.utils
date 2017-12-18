@@ -17,12 +17,12 @@ import sys
 from copy import deepcopy as copy
 
 class JsonBulk(object):
-    def __init__(self, path=""):
+    def __init__(self, path="", skip_header=0):
         self.data = []
         self.keys = []
         self.hyperparams = []
         if path != "":
-            self.load(path)
+            self.load(path, skip_header)
 
     def __add__(self, docs):
         ret = copy(self)
@@ -45,7 +45,7 @@ class JsonBulk(object):
     def clear(self):
         self.data = []
 
-    def load(self, path, append=True):
+    def load(self, path, append=True, skip_header=0):
         pathsp = path.split(" ")
         paths = []
         if append:
@@ -56,7 +56,7 @@ class JsonBulk(object):
             paths += glob.glob(p)
         for path in paths:
             try:
-                ret.data.append(JsonDoc(path))
+                ret.data.append(JsonDoc(path, skip_header=skip_header))
             except json.decoder.JSONDecodeError:
                 logging.warning("Error decoding %s" %path)
             logging.info('load %s' %path)
