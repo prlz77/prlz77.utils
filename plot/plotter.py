@@ -23,7 +23,7 @@ class Plotter(object):
     def plot(self, xlabel="", ylabel="", title=""):
         pylab.cla()
         indices = np.argsort(self.scores)[::-1]
-        colors = sns.color_palette("hls", len(indices))
+        colors = sns.color_palette("deep", len(indices))
         legend = []
         for i in indices:
             pylab.plot(self.x[i], np.array(self.y[i]), color=colors[i])
@@ -36,12 +36,15 @@ class Plotter(object):
     def tsplot(self, xlabel="", ylabel="", title=""):
         pylab.cla()
         indices = np.argsort(self.scores)[::-1]
-        colors = sns.color_palette("hls", len(indices))
+        colors = sns.color_palette("deep", len(indices))
         legend = []
+        color_lines = []
         for i in indices:
-            sns.tsplot(np.array(self.y[i]), color=colors[i])
+            sns.tsplot(np.array(self.y[i]), color=colors[i], legend=True)
             legend.append(self.legend[i])
-        pylab.legend(legend).draggable()
+            color_lines.append(pylab.Line2D([], [], color=colors[i]))
+        pylab.legend(color_lines, legend).draggable()
         pylab.xlabel(xlabel)
         pylab.ylabel(ylabel)
         pylab.title(title)
+
