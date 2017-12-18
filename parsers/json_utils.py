@@ -1,4 +1,6 @@
 import numpy as np
+import json
+
 
 def get_all_keys(document):
     """
@@ -13,7 +15,6 @@ def get_all_keys(document):
     for line in document:
         keys.update(line.keys())
     return sorted(list(keys))
-
 
 def transpose(document):
     """
@@ -71,3 +72,26 @@ def pad_dict(document):
             else:
                 ret[-1][key] = float('nan')
     return ret
+
+class JsonDoc(object):
+    def __init__(self, path):
+        self.path = path
+        with open(path, 'r') as infile:
+            self.data = json.load(infile)
+        self.hyperparams = collapse(self.data)
+        self.data = transpose(self.data)
+        self.keys = self.data.keys()
+        self.transposed = True
+
+    def transpose(self):
+        self.data = transpose(self.data)
+        self.transposed = not self.transposed
+
+    def __getitem__(self, item):
+        return self.data[item]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+        if key not in self.keys:
+            self.keys.append(key)
+

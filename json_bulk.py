@@ -3,9 +3,11 @@
 # Date: 15/12/2017
 import fire
 import pylab
-import seaborn
+import seaborn as sns
 import os
 from parsers import json_utils as jutils
+from parsers.json_utils import JsonDoc
+from plot.plotter import Plotter
 import json
 import glob
 import logging
@@ -14,81 +16,112 @@ import uuid
 import sys
 from copy import deepcopy as copy
 
-data = []
-def load(path):
-    pathsp = path.split(" ")
-    paths = []
-    for p in pathsp:
-        paths += glob.glob(p)
-    global data
-    for path in paths:
-        try:
-            with open(path, 'r') as infile:
-                data.append(json.load(infile))
-        except json.decoder.JSONDecodeError:
-            logging.warning("Error decoding %s" %path)
-        logging.info('load %s' %path)
-    return data
+class JsonBulk(object):
+    def __init__(self, path=""):
+        self.data = []
+        self.keys = []
+        self.hyperparams = []
+        if path != "":
+            self.load(path)
 
-def select_hyperparams(data, field, value):
-    ret = []
-    for document in data:
-        cdoc = jutils.collapse(document)
-        if cdoc[field] == value:
-            ret.append(document)
-    return ret
+    def __add__(self, docs):
+        ret = copy(self)
+        if isinstance(docs, list):
+            ret.data += docs
+        elif isinstance(docs, JsonBulk):
+            ret.data += docs.data
+        elif isinstance(docs, JsonDoc):
+            ret.data.append(docs)
+        ret.__update_keys()
+        ret.__pad_docs()
+        return ret
 
-def select_hyperparams_2(data, filter):
-    ret = []
-    for document in data:
-        cdoc = jutils.collapse(document)
-        filt = filter[:]
-        for key in cdoc.keys():
-            filt = filt.replace(key, "cdoc['%s']" %key)
-        if eval(filt):
-            ret.append(document)
-    return ret
+    def __iadd__(self, docs):
+        if isinstance(docs, JsonBulk):
+            self.data += docs.data
+        self.__update_keys()
+        self.__pad_docs()
 
-def bulk_get_keys(data):
-    keys = set([])
-    for document in data:
-        keys.update(jutils.get_all_keys(document))
-    return sorted(list(keys))
+    def clear(self):
+        self.data = []
 
-def pad_docs(data, transpose=True):
-    keys = bulk_get_keys(data)
-    transposed = []
-    for document in data:
-        transposed.append(jutils.transpose(document))
-    for key in keys:
-        lengths = []
-        for document in transposed:
-            if key not in document:
-                document[key] = []
-            lengths.append(len(document[key]))
-        max_length = np.max(lengths)
-        for document in transposed:
-            l = len(document[key])
-            d = max_length - l
-            if d > 0:
-                document[key] += [float('nan')] * d
-    if transpose:
-        return transposed
-    else:
-        return jutils.transpose(transposed)
+    def load(self, path, append=True):
+        pathsp = path.split(" ")
+        paths = []
+        if append:
+            ret = self
+        else:
+            ret = JsonBulk()
+        for p in pathsp:
+            paths += glob.glob(p)
+        for path in paths:
+            try:
+                ret.data.append(JsonDoc(path))
+            except json.decoder.JSONDecodeError:
+                logging.warning("Error decoding %s" %path)
+            logging.info('load %s' %path)
+        self.__update_keys()
+        self.__pad_docs()
+        return ret
+
+    def add_doc(self, doc):
+        self.data.append(doc)
+        self.__update_keys()
+        self.__pad_docs()
+
+    def select_hyperparams(self, field, value):
+        ret = JsonBulk()
+        for document in self.data:
+            if document.hyperparams[field] == value:
+                ret.add_doc(document)
+        return ret
+
+    def select_hyperparams_2(self, filter):
+        ret = JsonBulk()
+        for document in self.data:
+            filt = filter[:]
+            for key in document.keys:
+                filt = filt.replace(key, "document['%s']" %key)
+            if eval(filt):
+                ret.add_doc(document)
+        return ret
+
+    def __update_keys(self):
+        self.keys = set([])
+        for document in self.data:
+            self.keys.update(document.keys)
+        self.keys = list(sorted(self.keys))
+
+    def __pad_docs(self):
+        for key in self.keys:
+            lengths = []
+            for document in self.data:
+                if key not in document.keys:
+                    document[key] = []
+                lengths.append(len(document[key]))
+            max_length = np.max(lengths)
+            for document in self.data:
+                l = len(document[key])
+                d = max_length - l
+                if d > 0:
+                    document[key] += [float('nan')] * d
 
 
-def reduce(data, src, function, dst, out=None):
-    buff = pad_docs(data)
-    if out is None:
-        out = copy(buff[0])
-    out[dst] = []
-    for document in buff:
-        out[dst].append(document[src])
-    out[dst] = function(out[dst])
-    return out
+    def reduce(self, src, function, dst):
+        ret = copy(self.data[0])
+        for document in self.data:
+            ret[dst].append(document[src])
+        ret[dst] = function(ret[dst])
+        return ret
 
-if __name__ == '__main__':
-    fire.Fire()
-
+    def plot_one_line(self, y_field, x_field="", legend="", score_f=np.max):
+        if legend == "":
+            legend = y_field
+        data = [d[y_field] for d in self.data]
+        if x_field != "":
+            x = [d[x_field] for d in self.data]
+        else:
+            x = None
+        Plotter.add_line(data, x=x, label=legend, score_f=score_f)
+        Plotter.tsplot()
 
