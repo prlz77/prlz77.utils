@@ -21,6 +21,7 @@ class JsonBulk(object):
         self.data = []
         self.keys = []
         self.hyperparams = []
+        self.iter_count = 0
         if path != "":
             self.load(path, skip_header=skip_header)
 
@@ -41,6 +42,17 @@ class JsonBulk(object):
             self.data += docs.data
         self.__update_keys()
         self.__pad_docs()
+
+    def __iter__(self):
+        self.iter_count = 0
+        return self
+
+    def __next__(self):
+        ret = self.data[self.iter_count]
+        self.iter_count += 1
+        if self.iter_count == len(self.data):
+            raise StopIteration()
+        return ret
 
     def clear(self):
         self.data = []
@@ -127,4 +139,26 @@ class JsonBulk(object):
         plotter.add_line(data, x=x, label=legend, score_f=score_f)
         plotter.tsplot()
         return plotter
+
+    def plot_hyperparam(self, hyperparam, target, legend="", score_f=np.nanmax, order="asc", plotter=None):
+        hypervalues = set([])
+        for document in self.data:
+            hypervalues.update(np.unique(document[hyperparam]).tolist())
+
+        hypervalues = list(sorted(hypervalues))
+        if order == "desc":
+            hypervalues = hypervalues[::-1]
+
+        target_values = []
+        for hypervalue in hypervalues:
+            buffer = []
+            docs = self.select_hyperparams(hyperparam, hypervalue)
+            for doc in docs:
+                buffer.append(score_f(doc[target]))
+            target_values.append(score_f(buffer))
+        if plotter is None:
+            plotter = Plotter()
+        plotter.add_line(target_values, hypervalues, legend, score_f)
+        return plotter
+
 
