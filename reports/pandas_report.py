@@ -1,14 +1,13 @@
 import matplotlib
-try:
-    matplotlib.use("qt5agg")
-    import pandas as pd
-except ImportError:
+import os
+if "DISPLAY" not in os.environ:
     matplotlib.use("agg")
-    import pandas as pd
+else:
+    matplotlib.use('qt5agg')
+import pandas as pd
 import argparse
 import glob
 import json
-import os
 import warnings
 import pylab
 import numpy as np
