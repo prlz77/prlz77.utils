@@ -21,8 +21,10 @@ def filter_log(log, filter):
     return eval(filter)
 
 
-def read_path(path_str, pre_fn=lambda x: x, filter=None):
-    paths = glob.glob(path_str, recursive=True)
+def read_path(path_lst, pre_fn=lambda x: x, filter=None):
+    paths = set([])
+    for path in path_lst:
+        paths.update(glob.glob(path))
     logs = []
     for path in paths:
         if not os.path.isfile(path):
@@ -68,7 +70,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("command", type=str, choices=["summary", "s", "plot", "p"])
-    parser.add_argument("paths", type=str, help="For instance, ./*.json")
+    parser.add_argument("paths", type=str, nargs="+", help="For instance, ./*.json")
     parser.add_argument("target_field", type=str, default="val_accuracy")
     parser.add_argument("--fields", type=str, nargs="*", default=None)
     parser.add_argument("--filter_hyperparam", type=str, nargs="?", default=[], help="$depth > 16")
