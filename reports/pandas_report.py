@@ -59,6 +59,8 @@ def main(args):
         fields.add(args.target_field)
         fields.add("epoch")
         fields = list(fields)
+    else:
+        fields = None
     logs = read_path(args.paths, lambda data: pd.DataFrame(data=data, columns=fields), args.filter_hyperparam)
     logs = pd.concat(logs, keys=range(len(logs)))
     if args.command == "s" or args.command == "summarize":
