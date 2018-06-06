@@ -54,7 +54,6 @@ def plot(logs, target_field, fields):
 
 
 def main(args):
-    print(vars(args))
     if args.fields is not None:
         fields = set(args.fields)
         fields.add(args.target_field)
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("paths", type=str, nargs="+", help="For instance, ./*.json")
     parser.add_argument("target_field", type=str, default="val_accuracy")
     parser.add_argument("--fields", type=str, nargs="*", default=None)
-    parser.add_argument("--filter_hyperparam", type=str, nargs="?", default=[], help="$depth > 16")
+    parser.add_argument("--filter_hyperparam", type=str, nargs="?", default=None, help="$depth > 16")
     # Summary options
     parser.add_argument("--summary_output", "-so", type=str, default="report.csv")
     # Plot options
