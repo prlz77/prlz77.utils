@@ -11,6 +11,10 @@ import json
 import warnings
 import pylab
 import numpy as np
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = lambda x: x
 
 
 def filter_log(log, filter):
@@ -26,7 +30,7 @@ def read_path(path_lst, pre_fn=lambda x: x, filter=None):
     for path in path_lst:
         paths.update(glob.glob(path))
     logs = []
-    for path in paths:
+    for path in tqdm(paths):
         if not os.path.isfile(path):
             warnings.warn("%s does not exist." % path)
         if path.split(".")[-1] == "json":
