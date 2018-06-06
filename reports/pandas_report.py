@@ -1,6 +1,10 @@
 import matplotlib
-
-matplotlib.use("qt5agg")
+try:
+    matplotlib.use("qt5agg")
+    import pandas as pd
+except ImportError:
+    matplotlib.use("agg")
+    import pandas as pd
 import argparse
 import glob
 import json
@@ -8,7 +12,6 @@ import os
 import warnings
 import pylab
 import numpy as np
-import pandas as pd
 
 
 def filter_log(log, filter):
