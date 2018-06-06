@@ -54,6 +54,7 @@ def plot(logs, target_field, fields):
 
 
 def main(args):
+    print(vars(args))
     if args.fields is not None:
         fields = set(args.fields)
         fields.add(args.target_field)
