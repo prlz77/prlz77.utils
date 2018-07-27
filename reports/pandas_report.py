@@ -40,7 +40,10 @@ def read_path(path_lst, pre_fn=lambda x: x, filter=None):
             warnings.warn("%s does not exist." % path)
         if path.split(".")[-1] == "json":
             with open(path, "r") as infile:
-                log = json.load(infile)
+                try:
+                    log = json.load(infile)
+                except:
+                    print("Error decoding %s" % path)
                 if filter is not None and not filter_log(log, filter):
                     pass
                 else:
@@ -50,15 +53,16 @@ def read_path(path_lst, pre_fn=lambda x: x, filter=None):
     return logs
 
 
-def report(logs, target_field, output, avg, x_axis):
+def report(logs, target_field, columns, output, merge_op, x_axis):
     idx = logs[target_field].replace(np.NaN, -1).groupby(level=0).idxmax()
     ret = pd.DataFrame(logs, index=idx)
-    if avg:
+
+    if merge_op != {}:
         ret = ret.applymap(lambda x: str(x) if isinstance(x, list) else x)
-        columns = list(ret.columns)
+        columns = list(columns)
         columns.remove(target_field)
         columns.remove(x_axis)
-        ret = ret.groupby(columns).mean()
+        ret = ret.groupby(columns).agg(merge_op)
 
     ret.to_csv(output)
 
@@ -110,7 +114,7 @@ def plot_confidence(logs, target_field, columns, x_axis):
 
 
 def load_fn(data, columns, filter_all=""):
-    df = pd.DataFrame(data=data, columns=columns)
+    df = pd.DataFrame(data=data)#, columns=columns)
     if filter_all != "":
         filtersp = filter_all.split("$")
         if len(filtersp) > 1:
@@ -135,7 +139,15 @@ def main(args):
     logs = read_path(args.paths, lambda x: load_fn(x, columns, args.filter_all), args.filter_column)
     logs = pd.concat(logs, keys=range(len(logs)))
     if args.command == "s" or args.command == "summarize":
-        report(logs, args.target_field, args.summary_output, args.avg, args.x_axis)
+        merge_op = []
+        if args.avg:
+            merge_op.append("mean")
+        elif args.med:
+            merge_op.append("median")
+        if args.std:
+            merge_op.append("std")
+
+        report(logs, args.target_field, columns, args.summary_output, merge_op, args.x_axis)
     elif args.command == "p" or args.command == "plot":
         if args.confidence:
             plot_confidence(logs, args.target_field, columns, args.x_axis)
@@ -148,13 +160,17 @@ if __name__ == "__main__":
     parser.add_argument("command", type=str, choices=["summary", "s", "plot", "p"])
     parser.add_argument("paths", type=str, nargs="+", help="For instance, ./*.json")
     parser.add_argument("target_field", type=str )
-    parser.add_argument("--columns", "-c", type=str, nargs="*", default=None)
+    parser.add_argument("--hyperparams", "-hp", type=str, nargs="*", default=None, help="Hyperparams to group")
+    parser.add_argument("--columns", "-c", type=str, nargs="*", default=None, help="which columns to show")
+    parser.add_argument("--remove_column", '-rc', type=str)
     parser.add_argument("--filter_column", "-f", type=str, nargs="?", default=None, help="$depth > 16")
     parser.add_argument("--filter_all", type=str, default="", help="$accuracy > 0")
     parser.add_argument("--x_axis", type=str, default="epoch")
     # Summary options
     parser.add_argument("--summary_output", "-so", type=str, default="report.csv")
     parser.add_argument("--avg", action="store_true")
+    parser.add_argument("--std", action="store_true", help="Appends standard deviation")
+    parser.add_argument("--med", action="store_true", help="Use median.")
     # Plot options
     parser.add_argument("--plot")
     parser.add_argument("--confidence", action="store_true")
