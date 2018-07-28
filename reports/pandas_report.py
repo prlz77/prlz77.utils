@@ -1,4 +1,5 @@
 import matplotlib
+matplotlib.use('qt5agg')
 import os
 if "DISPLAY" not in os.environ:
     matplotlib.use("agg")
@@ -57,7 +58,7 @@ def report(logs, target_field, columns, output, merge_op, x_axis):
     idx = logs[target_field].replace(np.NaN, -1).groupby(level=0).idxmax()
     ret = pd.DataFrame(logs, index=idx)
 
-    if merge_op != {}:
+    if len(merge_op) > 0:
         ret = ret.applymap(lambda x: str(x) if isinstance(x, list) else x)
         columns = list(columns)
         columns.remove(target_field)
