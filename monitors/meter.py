@@ -13,7 +13,7 @@ class TopkMeter(object):
 
         for k in self.topk:
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
-            self.meters[k].update(correct_k, batch_size)
+            self.meters[k].update(float(correct_k), batch_size)
 
     def mean(self):
         return {k: self.meters[k].mean() for k in self.topk}
