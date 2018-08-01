@@ -19,7 +19,7 @@ class TopkMeter(object):
         return {k: self.meters[k].mean() for k in self.topk}
 
     def reset(self):
-        for meter in self.meters:
+        for meter in self.meters.values():
             meter.reset()
 
 
