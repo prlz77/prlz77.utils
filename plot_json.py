@@ -4,7 +4,8 @@
 """
 Generates a plot from a json file with a list of model states.
 """
-
+import matplotlib
+matplotlib.use('qt5agg')
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

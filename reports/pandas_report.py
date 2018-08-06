@@ -34,7 +34,7 @@ def filter_log(log, filter):
 def read_path(path_lst, pre_fn=lambda x: x, filter=None):
     paths = set([])
     for path in path_lst:
-        paths.update(glob.glob(path))
+        paths.update(glob.glob(path, recursive=True))
     logs = []
     for path in tqdm(paths):
         if not os.path.isfile(path):
