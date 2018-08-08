@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
 # Author: prlz77 <pau.rodriguez at gmail.com>
 # Date: 15/12/2017
+
+import glob
+import json
+import logging
 import fire
-import pylab
-import seaborn as sns
-import os
-from parsers import json_utils as jutils
+from copy import deepcopy as copy
+
+import numpy as np
 from parsers.json_utils import JsonDoc
 from plot.plotter import Plotter
-import json
-import glob
-import logging
-import numpy as np
-import uuid
-import sys
-from copy import deepcopy as copy
+
 
 class JsonBulk(object):
     def __init__(self, path="", skip_header=0):
@@ -48,11 +45,29 @@ class JsonBulk(object):
         return self
 
     def __next__(self):
-        ret = self.data[self.iter_count]
-        self.iter_count += 1
         if self.iter_count == len(self.data):
             raise StopIteration()
+        ret = self.data[self.iter_count]
+        self.iter_count += 1
         return ret
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self.data[item]
+        elif isinstance(item, str):
+            ret = []
+            for document in self.data:
+                ret.append(document[item])
+            return np.array(ret)
+        else:
+            raise ValueError("invalid key")
+
+    def __setitem__(self, key, value):
+        if isinstance(key, int):
+            self.data[key] = value
+        elif isinstance(key, str):
+            for document, val in zip(self.data, value):
+                document[key] = val
 
     def clear(self):
         self.data = []
@@ -70,8 +85,10 @@ class JsonBulk(object):
             try:
                 ret.data.append(JsonDoc(path, skip_header=skip_header))
             except json.decoder.JSONDecodeError:
-                logging.warning("Error decoding %s" %path)
-            logging.info('load %s' %path)
+                logging.warning("Error decoding %s" % path)
+            except IOError as e:
+                logging.warning(e)
+            logging.info('load %s' % path)
         self.__update_keys()
         self.__pad_docs()
         return ret
@@ -88,12 +105,12 @@ class JsonBulk(object):
                 ret.add_doc(document)
         return ret
 
-    def select_hyperparams_2(self, filter):
+    def filter(self, filter):
         ret = JsonBulk()
         for document in self.data:
             filt = filter[:]
             for key in document.keys:
-                filt = filt.replace(key, "document['%s']" %key)
+                filt = filt.replace(key, "document['%s']" % key)
             if eval(filt):
                 ret.add_doc(document)
         return ret
@@ -118,7 +135,6 @@ class JsonBulk(object):
                 if d > 0:
                     document[key] += [float('nan')] * d
 
-
     def reduce(self, src, function, dst):
         ret = copy(self.data[0])
         for document in self.data:
@@ -126,7 +142,7 @@ class JsonBulk(object):
         ret[dst] = function(ret[dst])
         return ret
 
-    def plot_one_line(self, y_field, x_field="", legend="", score_f=np.max, plotter=None):
+    def plot_one_line(self, y_field, x_field="", legend="", score_f=np.nanmax, plotter=None):
         if legend == "":
             legend = y_field
         if plotter is None:
@@ -137,13 +153,12 @@ class JsonBulk(object):
         else:
             x = None
         plotter.add_line(data, x=x, label=legend, score_f=score_f)
-        plotter.tsplot()
         return plotter
 
     def plot_hyperparam(self, hyperparam, target, legend="", score_f=np.nanmax, order="asc", plotter=None):
         hypervalues = set([])
         for document in self.data:
-            hypervalues.update(np.unique(document[hyperparam]).tolist())
+            hypervalues.update(filter(lambda x: not np.isnan(x), np.unique(document[hyperparam]).tolist()))
 
         hypervalues = list(sorted(hypervalues))
         if order == "desc":
@@ -161,4 +176,5 @@ class JsonBulk(object):
         plotter.add_line(target_values, hypervalues, legend, score_f)
         return plotter
 
-
+if __name__ == '__main__':
+    fire.Fire()

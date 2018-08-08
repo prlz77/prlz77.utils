@@ -1,5 +1,6 @@
 import numpy as np
 import json
+from plot.plotter import Plotter
 
 
 def get_all_keys(document):
@@ -80,6 +81,8 @@ class JsonDoc(object):
             self.data = json.load(infile)
         if skip_header > 0:
             self.data = self.data[skip_header:]
+            if len(self.data) == 0:
+                raise IOError("Empty document.")
         self.hyperparams = collapse(self.data)
         self.data = transpose(self.data)
         self.keys = self.data.keys()
@@ -88,6 +91,17 @@ class JsonDoc(object):
     def transpose(self):
         self.data = transpose(self.data)
         self.transposed = not self.transposed
+
+    def plot(self, y_field, x_field="", legend="", score_f=np.nanmax, plotter=None):
+        y = self.data[y_field]
+        if x_field == "":
+            x = np.arange(y.shape[0])
+        else:
+            x = self.data[x_field]
+        if plotter is None:
+            plotter = Plotter()
+        plotter.add_line(y, x, legend, score_f)
+        return plotter
 
     def __getitem__(self, item):
         return self.data[item]

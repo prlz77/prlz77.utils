@@ -1,6 +1,7 @@
 import matplotlib
 matplotlib.use('qt5agg')
 import os
+import sys
 if "DISPLAY" not in os.environ:
     matplotlib.use("agg")
 else:
@@ -52,6 +53,16 @@ def read_path(path_lst, pre_fn=lambda x: x, filter=None):
                     if log is not None:
                         logs.append(log)
     return logs
+
+def print_empty(path_lst):
+    for path in path_lst:
+        for p in glob.glob(path):
+            if not os.path.isfile(p):
+                print(p)
+            else:
+                with open(p, 'r') as infile:
+                    if len(infile.read()) <= 2:
+                        print(p)
 
 
 def report(logs, target_field, columns, output, merge_op, x_axis):
@@ -130,6 +141,10 @@ def load_fn(data, columns, filter_all=""):
 
 
 def main(args):
+
+    if args.command in ["e", "empty"]:
+        print_empty(args.paths)
+        sys.exit()
     if args.columns is not None:
         columns = set(args.columns)
         columns.add(args.target_field)
@@ -158,9 +173,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", type=str, choices=["summary", "s", "plot", "p"])
+    parser.add_argument("command", type=str, choices=["summary", "s", "plot", "p", "e", "empty"])
     parser.add_argument("paths", type=str, nargs="+", help="For instance, ./*.json")
     parser.add_argument("target_field", type=str )
+    parser.add_argument("--add_targets", type=str, default=[], nargs="+")
     parser.add_argument("--hyperparams", "-hp", type=str, nargs="*", default=None, help="Hyperparams to group")
     parser.add_argument("--columns", "-c", type=str, nargs="*", default=None, help="which columns to show")
     parser.add_argument("--remove_column", '-rc', type=str)
