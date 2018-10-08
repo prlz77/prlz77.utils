@@ -1,7 +1,9 @@
 import matplotlib
+
 matplotlib.use('qt5agg')
 import os
 import sys
+
 if "DISPLAY" not in os.environ:
     matplotlib.use("agg")
 else:
@@ -10,9 +12,11 @@ import pandas as pd
 import argparse
 import glob
 import json
+import ndjson
 import warnings
 import pylab
 import numpy as np
+
 try:
     from tqdm import tqdm
 except ImportError:
@@ -25,7 +29,7 @@ def filter_log(log, filter):
         if w[0] == "$":
             key = log[0][w[1:]]
             if isinstance(key, str):
-                key = "'%s'" %key
+                key = "'%s'" % key
             else:
                 key = str(key)
             filter = filter.replace(w, key)
@@ -40,19 +44,25 @@ def read_path(path_lst, pre_fn=lambda x: x, filter=None):
     for path in tqdm(paths):
         if not os.path.isfile(path):
             warnings.warn("%s does not exist." % path)
-        if path.split(".")[-1] == "json":
+        _, ext = os.path.splitext(path)
+        if ext in [".json", ".ndjson"]:
             with open(path, "r") as infile:
                 try:
-                    log = json.load(infile)
+                    if ext == ".json":
+                        log = json.load(infile)
+                    else:
+                        log = ndjson.load(infile)
                 except:
                     print("Error decoding %s" % path)
-                if filter is not None and not filter_log(log, filter):
-                    pass
-                else:
-                    log = pre_fn(log)
-                    if log is not None:
-                        logs.append(log)
+
+        if filter is not None and not filter_log(log, filter):
+            pass
+        else:
+            log = pre_fn(log)
+            if log is not None:
+                logs.append(log)
     return logs
+
 
 def print_empty(path_lst):
     for path in path_lst:
@@ -72,8 +82,6 @@ def report(logs, target_field, columns, output, merge_op, x_axis):
     if len(merge_op) > 0:
         ret = ret.applymap(lambda x: str(x) if isinstance(x, list) else x)
         columns = list(columns)
-        columns.remove(target_field)
-        columns.remove(x_axis)
         ret = ret.groupby(columns).agg(merge_op)
 
     ret.to_csv(output)
@@ -82,17 +90,20 @@ def report(logs, target_field, columns, output, merge_op, x_axis):
 def plot_pandas(logs, target_field, columns, x_axis):
     columns = logs.keys() if columns is None else columns
     columns = list(set(columns) - set([target_field, x_axis]))
+    logs = logs.applymap(lambda x: str(x) if isinstance(x, list) else x)
     ret = logs.pivot_table(index=x_axis, columns=columns, values=target_field)
     ret.plot()
     pylab.gca().get_legend().draggable()
     pylab.show()
 
+
 def plot_confidence(logs, target_field, columns, x_axis):
     columns = logs.keys() if columns is None else columns
     columns = list(set(columns) - set([target_field, x_axis]))
     logs = logs.applymap(lambda x: str(x) if isinstance(x, list) else x)
-   # logs = pd.DataFrame(logs, index=logs[target_field].unstack().dropna(how='all').stack().index)
-    ret = logs.pivot_table(index=x_axis, columns=columns, values=target_field, aggfunc=[np.nanmin, np.nanmax, np.nanmean])
+    # logs = pd.DataFrame(logs, index=logs[target_field].unstack().dropna(how='all').stack().index)
+    ret = logs.pivot_table(index=x_axis, columns=columns, values=target_field,
+                           aggfunc=[np.nanmin, np.nanmax, np.nanmean])
     ret_dict = ret.to_dict('list')
     new_dict = {}
     max_values = []
@@ -119,41 +130,65 @@ def plot_confidence(logs, target_field, columns, x_axis):
         pylab.plot(range(len(amin)), mean, color=colors[i], linestyle=styles[i % len(styles)])
     pylab.xlabel(x_axis)
     pylab.ylabel(target_field)
-    pylab.title("%s: %s" %(target_field, str(columns)))
+    pylab.title("%s: %s" % (target_field, str(columns)))
     keys = [",".join([str(x) for x in max_keys[i]]) for i in idx]
     pylab.legend(keys, title=",".join(columns)).draggable()
     pylab.show()
 
 
-def load_fn(data, columns, filter_all=""):
-    df = pd.DataFrame(data=data)#, columns=columns)
+def load_fn(data, filter_all=""):
+    df = pd.DataFrame(data=data)  # , columns=columns)
     if filter_all != "":
         filtersp = filter_all.split("$")
         if len(filtersp) > 1:
             for f in filtersp:
                 w = f.split(" ")[0]
-                filter_all = filter_all.replace("$%s" %w, "df['%s']" %w)
+                filter_all = filter_all.replace("$%s" % w, "df['%s']" % w)
         return df if eval(filter_all) else None
     else:
         return df
+
+def auto_hyperparams(data):
+    current_hyperparams = {}
+    count = 0
+    for _, log in data.groupby(level=0):
+        count += 1
+        for col in log.columns:
+            if len(set(map(str, log[col].values))) == 1:
+                if col in current_hyperparams:
+                    current_hyperparams[col].append(str(log[col].values[0]))
+                else:
+                    current_hyperparams[col] = [log[col].values[0]]
+    ret = []
+    for k, v in current_hyperparams.items():
+        l = len(set(map(str, v)))
+        if l > 1 and l < count - 1:
+            ret.append(k)
+    return ret
 
 
 
 
 def main(args):
-
     if args.command in ["e", "empty"]:
         print_empty(args.paths)
         sys.exit()
+
     if args.columns is not None:
         columns = set(args.columns)
-        columns.add(args.target_field)
-        columns.add(args.x_axis)
         columns = list(columns)
     else:
         columns = None
-    logs = read_path(args.paths, lambda x: load_fn(x, columns, args.filter_all), args.filter_column)
+
+    logs = read_path(args.paths, lambda x: load_fn(x, args.filter_all), args.filter_column)
     logs = pd.concat(logs, keys=range(len(logs)))
+
+    if args.auto:
+        columns = auto_hyperparams(logs)
+
+    if not args.extended:
+        logs = logs.filter(items=(columns + [args.target_field, args.x_axis]))
+
     if args.command == "s" or args.command == "summarize":
         merge_op = []
         if args.avg:
@@ -165,6 +200,8 @@ def main(args):
 
         report(logs, args.target_field, columns, args.summary_output, merge_op, args.x_axis)
     elif args.command == "p" or args.command == "plot":
+        columns.append(args.target_field)
+        columns.append(args.x_axis)
         if args.confidence:
             plot_confidence(logs, args.target_field, columns, args.x_axis)
         else:
@@ -175,7 +212,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("command", type=str, choices=["summary", "s", "plot", "p", "e", "empty"])
     parser.add_argument("paths", type=str, nargs="+", help="For instance, ./*.json")
-    parser.add_argument("target_field", type=str )
+    parser.add_argument("target_field", type=str)
+    parser.add_argument("--auto", action="store_true", help="Automatically identifies hyperparameters")
+    parser.add_argument("--multi", action="store_true", help="Interpret outer most folder as different experiments")
     parser.add_argument("--add_targets", type=str, default=[], nargs="+")
     parser.add_argument("--hyperparams", "-hp", type=str, nargs="*", default=None, help="Hyperparams to group")
     parser.add_argument("--columns", "-c", type=str, nargs="*", default=None, help="which columns to show")
@@ -184,6 +223,7 @@ if __name__ == "__main__":
     parser.add_argument("--filter_all", type=str, default="", help="$accuracy > 0")
     parser.add_argument("--x_axis", type=str, default="epoch")
     # Summary options
+    parser.add_argument("--extended", action="store_true", help="Show all fields")
     parser.add_argument("--summary_output", "-so", type=str, default="report.csv")
     parser.add_argument("--avg", action="store_true")
     parser.add_argument("--std", action="store_true", help="Appends standard deviation")
@@ -194,4 +234,15 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args)
+    if args.multi:
+        all = set([])
+        for path in args.paths:
+            all.update(glob.glob(path))
+        expdirs = map(lambda x: x.split("/")[0], all)
+        for expdir in set(expdirs):
+            print(expdir)
+            args.paths = list(filter(lambda x: x.split("/")[0] == expdir, all))
+            args.summary_output = "report_%s.csv" %expdir
+            main(args)
+    else:
+        main(args)
