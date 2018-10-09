@@ -74,13 +74,18 @@ def print_empty(path_lst):
                     if len(infile.read()) <= 2:
                         print(p)
 
+def convert_types(x):
+    if not isinstance(x, int) and not isinstance(x, float):
+        return str(x)
+    else:
+        return x
 
 def report(logs, target_field, columns, output, merge_op, x_axis):
     idx = logs[target_field].replace(np.NaN, -1).groupby(level=0).idxmax()
     ret = pd.DataFrame(logs, index=idx)
 
     if len(merge_op) > 0:
-        ret = ret.applymap(lambda x: str(x) if isinstance(x, list) else x)
+        ret = ret.applymap(convert_types)
         columns = list(columns)
         ret = ret.groupby(columns).agg(merge_op)
 
@@ -162,7 +167,7 @@ def auto_hyperparams(data):
     ret = []
     for k, v in current_hyperparams.items():
         l = len(set(map(str, v)))
-        if l > 1 and l <= count // 2:
+        if l > 1 and l <= count - 1:
             ret.append(k)
     return ret
 
@@ -174,19 +179,18 @@ def main(args):
         print_empty(args.paths)
         sys.exit()
 
-    if args.columns is not None:
-        columns = set(args.columns)
-        columns = list(columns)
-    else:
-        columns = None
-
     logs = read_path(args.paths, lambda x: load_fn(x, args.filter_all), args.filter_column)
     logs = pd.concat(logs, keys=range(len(logs)))
 
     if args.auto:
         columns = auto_hyperparams(logs)
+    elif args.columns is not None:
+        columns = set(args.columns)
+        columns = list(columns)
+    else:
+        columns = []
 
-    if not args.extended:
+    if len(columns) > 0 and not args.extended:
         logs = logs.filter(items=(columns + [args.target_field, args.x_axis]))
 
     if args.command == "s" or args.command == "summarize":
