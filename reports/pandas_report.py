@@ -162,7 +162,7 @@ def auto_hyperparams(data):
     ret = []
     for k, v in current_hyperparams.items():
         l = len(set(map(str, v)))
-        if l > 1 and l < count - 1:
+        if l > 1 and l <= count // 2:
             ret.append(k)
     return ret
 
@@ -195,6 +195,8 @@ def main(args):
             merge_op.append("mean")
         elif args.med:
             merge_op.append("median")
+        elif args.max:
+            merge_op.append("max")
         if args.std:
             merge_op.append("std")
 
@@ -228,6 +230,7 @@ if __name__ == "__main__":
     parser.add_argument("--avg", action="store_true")
     parser.add_argument("--std", action="store_true", help="Appends standard deviation")
     parser.add_argument("--med", action="store_true", help="Use median.")
+    parser.add_argument("--max", action="store_true", help="Use max")
     # Plot options
     parser.add_argument("--plot")
     parser.add_argument("--confidence", action="store_true")
