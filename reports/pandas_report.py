@@ -77,6 +77,8 @@ def print_empty(path_lst):
 def convert_types(x):
     if not isinstance(x, int) and not isinstance(x, float):
         return str(x)
+    elif np.isnan(x):
+        return "nan"
     else:
         return x
 
@@ -167,7 +169,7 @@ def auto_hyperparams(data):
     ret = []
     for k, v in current_hyperparams.items():
         l = len(set(map(str, v)))
-        if l > 1 and l <= count - 1:
+        if l > 1 and l <= count * 0.8:
             ret.append(k)
     return ret
 
@@ -182,6 +184,9 @@ def main(args):
     logs = read_path(args.paths, lambda x: load_fn(x, args.filter_all), args.filter_column)
     logs = pd.concat(logs, keys=range(len(logs)))
 
+    if len(args.remove_columns) > 0:
+        logs = logs.filter(items=(set(logs.columns) - set(args.remove_columns)))
+
     if args.auto:
         columns = auto_hyperparams(logs)
     elif args.columns is not None:
@@ -192,6 +197,7 @@ def main(args):
 
     if len(columns) > 0 and not args.extended:
         logs = logs.filter(items=(columns + [args.target_field, args.x_axis]))
+
 
     if args.command == "s" or args.command == "summarize":
         merge_op = []
@@ -224,7 +230,7 @@ if __name__ == "__main__":
     parser.add_argument("--add_targets", type=str, default=[], nargs="+")
     parser.add_argument("--hyperparams", "-hp", type=str, nargs="*", default=None, help="Hyperparams to group")
     parser.add_argument("--columns", "-c", type=str, nargs="*", default=None, help="which columns to show")
-    parser.add_argument("--remove_column", '-rc', type=str)
+    parser.add_argument("--remove_columns", '-rc', default=[], nargs="*", type=str)
     parser.add_argument("--filter_column", "-f", type=str, nargs="?", default=None, help="$depth > 16")
     parser.add_argument("--filter_all", type=str, default="", help="$accuracy > 0")
     parser.add_argument("--x_axis", type=str, default="epoch")
