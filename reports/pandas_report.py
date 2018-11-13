@@ -78,7 +78,7 @@ def convert_types(x):
     if not isinstance(x, int) and not isinstance(x, float):
         return str(x)
     elif np.isnan(x):
-        return "nan"
+        return 'NaN'
     else:
         return x
 
@@ -155,17 +155,18 @@ def load_fn(data, filter_all=""):
     else:
         return df
 
-def auto_hyperparams(data):
+def auto_hyperparams(data, skip=[]):
     current_hyperparams = {}
     count = 0
     for _, log in data.groupby(level=0):
         count += 1
-        for col in log.columns:
+        cols = set(log.columns) - set(skip)
+        for col in cols:
             if len(set(map(str, log[col].values))) == 1:
                 if col in current_hyperparams:
                     current_hyperparams[col].append(str(log[col].values[0]))
                 else:
-                    current_hyperparams[col] = [log[col].values[0]]
+                    current_hyperparams[col] = [str(log[col].values[0])]
     ret = []
     for k, v in current_hyperparams.items():
         l = len(set(map(str, v)))
@@ -181,6 +182,7 @@ def main(args):
         print_empty(args.paths)
         sys.exit()
 
+
     logs = read_path(args.paths, lambda x: load_fn(x, args.filter_all), args.filter_column)
     logs = pd.concat(logs, keys=range(len(logs)))
 
@@ -188,7 +190,8 @@ def main(args):
         logs = logs.filter(items=(set(logs.columns) - set(args.remove_columns)))
 
     if args.auto:
-        columns = auto_hyperparams(logs)
+        columns = auto_hyperparams(logs, [args.target_field, args.x_axis])
+        print("Auto found params: ", columns)
     elif args.columns is not None:
         columns = set(args.columns)
         columns = list(columns)
