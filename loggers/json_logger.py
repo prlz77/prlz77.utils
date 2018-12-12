@@ -23,7 +23,7 @@ class JsonLogger():
         if rand_folder:
             path = os.path.join(path, str(datetime.datetime.now()).replace(' ', '_'))
             os.makedirs(path)
-        self.path = os.path.join(path, 'log.json')
+        self.path = os.path.join(path, 'log.ndjson')
         self.duration = datetime.datetime.now() if duration else False
 
     def update(self, state):
