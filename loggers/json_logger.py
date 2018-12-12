@@ -24,9 +24,6 @@ class JsonLogger():
             path = os.path.join(path, str(datetime.datetime.now()).replace(' ', '_'))
             os.makedirs(path)
         self.path = os.path.join(path, 'log.json')
-        self.output = open(self.path, 'w+')
-        self.output.write('[]')
-        self.first_time = True
         self.duration = datetime.datetime.now() if duration else False
 
     def update(self, state):
@@ -38,11 +35,5 @@ class JsonLogger():
         if not (self.duration is False):
             state['duration'] = str(datetime.datetime.now() - self.duration)
 
-        self.output.seek(self.output.tell()-1, 0)
-        if not self.first_time:
-            self.output.write(',')
-        else:
-            self.first_time = False
-        json.dump(state, self.output)
-        self.output.write("]")
-        self.output.flush()
+        with open(self.path, 'a') as outfile:
+            json.dump(state, outfile)
