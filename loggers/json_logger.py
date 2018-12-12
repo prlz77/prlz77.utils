@@ -37,3 +37,4 @@ class JsonLogger():
 
         with open(self.path, 'a') as outfile:
             json.dump(state, outfile)
+            outfile.write('\n')
