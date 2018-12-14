@@ -9,10 +9,12 @@ import json
 import datetime
 import os
 
+
 class JsonLogger():
     """
     The main class.
     """
+
     def __init__(self, path, rand_folder=False, duration=False):
         """ Constructor.
 
@@ -23,7 +25,12 @@ class JsonLogger():
         if rand_folder:
             path = os.path.join(path, str(datetime.datetime.now()).replace(' ', '_'))
             os.makedirs(path)
-        self.path = os.path.join(path, 'log.ndjson')
+
+        counter = 0
+        while os.path.isfile(os.path.join(path, "log_%02d.ndjson" % counter)):
+            counter += 1
+
+        self.path = os.path.join(path, 'log_%02d.ndjson' % counter)
         self.duration = datetime.datetime.now() if duration else False
 
     def update(self, state):
