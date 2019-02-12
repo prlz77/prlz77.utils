@@ -3,6 +3,7 @@ import ndjson
 import argparse
 import glob
 import os
+import warnings
 
 #path = '/Users/prlz77/Code/adaptron3000/results/psynbols2svhn_dynamic_retrain_policy/19910_4205_30636/log*json'
 
@@ -20,6 +21,16 @@ def stitch_logs(paths):
     ret = []
     for file in paths:
         data = read_file(file)
+        counter = 0
+        # Skipping headers
+        while counter < len(data) and "epoch" not in data[counter]:
+            counter += 1
+        if counter == len(data):
+            warnings.warn("Skipping header-only %s" %file)
+            continue
+        else:
+            data = data[counter:]
+
         counter = 1
         if len(data) > 0:
             if len(ret) == 0:
@@ -33,7 +44,7 @@ def stitch_logs(paths):
                     counter += 1
                 ret = ret[:-counter] + data
             elif ret[-counter]["epoch"] + 1 < data[0]["epoch"]:
-                raise ValueError("Could not stitch logs")
+                raise ValueError("Could not stitch logs on %s" %file)
     return ret
 
 def main():
