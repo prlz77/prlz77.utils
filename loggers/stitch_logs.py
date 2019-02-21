@@ -55,9 +55,12 @@ def main():
     for dir in os.listdir(args.folder):
         to_load = sorted(glob.glob(os.path.join(args.folder, dir, args.files)))
         stitched = stitch_logs(to_load)
-        with open(os.path.join(os.path.dirname(to_load[0]), 'log.ndjson'), 'w') as output:
-            print("Save: %s" %os.path.join(os.path.dirname(to_load[0]), 'log.ndjson'))
-            ndjson.dump(stitched, output)
+        if len(stitched) > 0:
+            with open(os.path.join(os.path.dirname(to_load[0]), 'log.ndjson'), 'w') as output:
+                print("Save: %s" %os.path.join(os.path.dirname(to_load[0]), 'log.ndjson'))
+                ndjson.dump(stitched, output)
+        else:
+            print("%s empty" %(dir) )
 
 if __name__ == "__main__":
     main()

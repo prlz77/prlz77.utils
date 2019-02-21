@@ -208,9 +208,9 @@ def main(args):
         merge_op = []
         if args.avg:
             merge_op.append("mean")
-        elif args.med:
+        if args.med:
             merge_op.append("median")
-        elif args.max:
+        if args.max:
             merge_op.append("max")
         if args.std:
             merge_op.append("std")
@@ -239,6 +239,7 @@ if __name__ == "__main__":
     parser.add_argument("--filter_column", "-f", type=str, nargs="?", default=None, help="$depth > 16")
     parser.add_argument("--filter_all", type=str, default="", help="$accuracy > 0")
     parser.add_argument("--x_axis", type=str, default="epoch")
+    parser.add_argument("--force", action="store_true", help="Skips failing logs.")
     # Summary options
     parser.add_argument("--extended", action="store_true", help="Show all fields")
     parser.add_argument("--summary_output", "-so", type=str, default="report.csv")

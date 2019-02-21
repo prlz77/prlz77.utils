@@ -25,6 +25,8 @@ class JsonLogger():
         if rand_folder:
             path = os.path.join(path, str(datetime.datetime.now()).replace(' ', '_'))
             os.makedirs(path)
+        elif not os.path.isdir(path):
+            os.makedirs(path)
 
         counter = 0
         while os.path.isfile(os.path.join(path, "log_%02d.ndjson" % counter)):
