@@ -98,7 +98,7 @@ def plot_pandas(logs, target_field, columns, x_axis):
     columns = logs.keys() if columns is None else columns
     columns = list(set(columns) - set([target_field, x_axis]))
     logs = logs.applymap(lambda x: str(x) if isinstance(x, list) else x)
-    ret = logs.pivot_table(index=x_axis, columns=columns, values=target_field)
+    ret = logs.pivot_table(index=x_axis, columns=columns, values=target_field, aggfunc=np.nanmean)
     ret.plot()
     pylab.gca().get_legend().draggable()
     pylab.show()
@@ -149,6 +149,8 @@ def load_fn(data, filter_all=""):
         filtersp = filter_all.split("$")
         if len(filtersp) > 1:
             for f in filtersp:
+                if f == '':
+                    continue
                 w = f.split(" ")[0]
                 filter_all = filter_all.replace("$%s" % w, "df['%s']" % w)
         return df if eval(filter_all) else None
