@@ -50,8 +50,11 @@ def stitch_logs(paths):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("folder")
+    parser.add_argument("folder", type=str,
+                        help="root folder where experiments are located in subfolders. \
+                              Works with infinite nesting.")
     parser.add_argument("--file_pattern", type=str, default="log_[0-9][0-9].ndjson")
+    parser.add_argument("--silent", action="store_false")
     args = parser.parse_args()
 
     for root, dirs, files in os.walk(args.folder):
@@ -64,7 +67,8 @@ def main():
                     print("Save: %s" %os.path.join(os.path.dirname(matches[0]), 'log.ndjson'))
                     ndjson.dump(stitched, output)
             else:
-                print("%s not processed" %str(matches))
+                if args.silent:
+                    print("%s not processed" %str(matches))
 
 
 
