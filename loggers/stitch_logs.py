@@ -4,6 +4,7 @@ import argparse
 import glob
 import os
 import warnings
+import re
 
 #path = '/Users/prlz77/Code/adaptron3000/results/psynbols2svhn_dynamic_retrain_policy/19910_4205_30636/log*json'
 
@@ -49,18 +50,23 @@ def stitch_logs(paths):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("folder", type=str)
-    parser.add_argument("--files", type=str, default="log_[0-9][0-9][0-9].ndjson")
+    parser.add_argument("folder")
+    parser.add_argument("--file_pattern", type=str, default="log_[0-9][0-9].ndjson")
     args = parser.parse_args()
-    for dir in os.listdir(args.folder):
-        to_load = sorted(glob.glob(os.path.join(args.folder, dir, args.files)))
-        stitched = stitch_logs(to_load)
-        if len(stitched) > 0:
-            with open(os.path.join(os.path.dirname(to_load[0]), 'log.ndjson'), 'w') as output:
-                print("Save: %s" %os.path.join(os.path.dirname(to_load[0]), 'log.ndjson'))
-                ndjson.dump(stitched, output)
-        else:
-            print("%s empty" %(dir) )
+
+    for root, dirs, files in os.walk(args.folder):
+        matches = re.findall(args.file_pattern, ",".join(files))
+        if len(matches) > 0:
+            matches = [os.path.join(root, x) for x in sorted(matches)]
+            stitched = stitch_logs(matches)
+            if len(stitched) > 0:
+                with open(os.path.join(os.path.dirname(matches[0]), 'log.ndjson'), 'w') as output:
+                    print("Save: %s" %os.path.join(os.path.dirname(matches[0]), 'log.ndjson'))
+                    ndjson.dump(stitched, output)
+            else:
+                print("%s not processed" %str(matches))
+
+
 
 if __name__ == "__main__":
     main()
